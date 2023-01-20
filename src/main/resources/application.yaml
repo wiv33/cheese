@@ -1,0 +1,21 @@
+
+management:
+  endpoint:
+    health:
+      enabled: true
+    metrics:
+      enabled: true
+logging:
+  level:
+    sql: info
+    web: trace
+spring:
+  data:
+    mongodb:
+      uri: http://localhost:27017
+  kafka:
+    consumer:
+      client-id: cheese-web
+      bootstrap-servers: psawesome.xyz:50900
+      auto-offset-reset: latest
+      group-id: cheese-web-db-sync-group

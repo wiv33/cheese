@@ -1,0 +1,17 @@
+version: "3.0"
+
+services:
+  web:
+    build: .
+    image: psawesome/cheese-web:test
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      - local_mongo
+
+  local_mongo:
+    image: mongo
+    hostname: localhost
+    ports:
+      - "27017:27017"
