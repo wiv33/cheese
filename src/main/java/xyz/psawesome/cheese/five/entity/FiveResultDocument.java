@@ -8,10 +8,12 @@ import org.springframework.data.domain.Persistable;
 import org.springframework.data.mongodb.core.mapping.Document;
 import xyz.psawesome.cheese.entity.CheeseBaseDocument;
 
+import java.time.Instant;
+
 
 @Getter
 @ToString
-@Document
+@Document(collection = "five_results")
 public class FiveResultDocument extends CheeseBaseDocument implements Persistable<String> {
     @Id
     private String fiveResultId;
@@ -40,5 +42,9 @@ public class FiveResultDocument extends CheeseBaseDocument implements Persistabl
     @Override
     public boolean isNew() {
         return createdAt == null;
+    }
+
+    public Instant createdDate() {
+        return createdAt;
     }
 }

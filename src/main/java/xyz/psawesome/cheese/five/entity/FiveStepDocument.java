@@ -3,6 +3,7 @@ package xyz.psawesome.cheese.five.entity;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -18,9 +19,10 @@ import java.util.List;
 import static xyz.psawesome.cheese.five.entity.DomainBatInfoDocument.DEFAULT_MIN_AMOUNT;
 import static xyz.psawesome.cheese.five.entity.DomainBatInfoDocument.DEFAULT_RATIO;
 
+@ToString
 @NoArgsConstructor
 @Getter
-@Document
+@Document(collection = "five_steps")
 public class FiveStepDocument extends CheeseBaseDocument implements Persistable<String> {
     @Id
     private String fiveStepId;
@@ -28,7 +30,9 @@ public class FiveStepDocument extends CheeseBaseDocument implements Persistable<
     private String userId;
     @Field("subnet_id")
     private String subnetId;
+    @Field("algorithm")
     private String algorithm;
+    @Field("amount")
     private BigDecimal amount;
     @Field(value = "five_type", targetType = FieldType.STRING)
     private FiveType fiveType;
@@ -36,9 +40,11 @@ public class FiveStepDocument extends CheeseBaseDocument implements Persistable<
     private ChoiceValue choice;
     private int step;
 
-    public FiveStepDocument(String userId, String subnetId) {
+    public FiveStepDocument(String userId, String subnetId, String algorithm, FiveType fiveType) {
         this.userId = userId;
         this.subnetId = subnetId;
+        this.algorithm = algorithm;
+        this.fiveType = fiveType;
     }
 
     public FiveStepDocument(String userId, String subnetId, FiveType fiveType) {
@@ -61,19 +67,29 @@ public class FiveStepDocument extends CheeseBaseDocument implements Persistable<
         this.step = step;
     }
 
-    public static FiveStepDocument forFind(String userId, String subnetId, String fiveType) {
+    public static FiveStepDocument forLastFind(String userId, String subnetId, String fiveType) {
         return new FiveStepDocument(userId, subnetId, FiveType.getType(fiveType));
     }
 
-    public static FiveStepDocument forInitSave(String userId, String subnetId, String fiveType) {
-        return new FiveStepDocument(userId, subnetId, "", DEFAULT_MIN_AMOUNT, FiveType.getType(fiveType), ChoiceValue.ODD, 0);
+    public static FiveStepDocument forLastFind(String userId, String subnetId, String algorithm, String fiveType) {
+        return new FiveStepDocument(userId, subnetId, algorithm, FiveType.getType(fiveType));
+    }
+
+    public static FiveStepDocument forLastFind(String userId, String subnetId, String algorithm, FiveType fiveType) {
+        return new FiveStepDocument(userId, subnetId, algorithm, fiveType);
+    }
+
+    public static FiveStepDocument forInitSave(String userId, String subnetId, String algorithm, String fiveType) {
+        return new FiveStepDocument(userId, subnetId, algorithm, DEFAULT_MIN_AMOUNT, FiveType.getType(fiveType), ChoiceValue.ODD, 0);
     }
 
     public FiveStepDocument next(FiveResultDocument resultDocument) {
+        if (resultDocument.getAlgorithm().equalsIgnoreCase(algorithm))
+            return this;
+
         var nextAmount = resultDocument.isAnswer(fiveType, choice) ? DEFAULT_MIN_AMOUNT : nextAmount(DEFAULT_RATIO);
-        this.step += 1;
-        return new FiveStepDocument(userId, subnetId, resultDocument.getAlgorithm(), nextAmount, resultDocument.getFiveType(),
-                nextChoice(), step);
+        this.step = step > 13 ? 0 : step + 1;
+        return new FiveStepDocument(userId, subnetId, resultDocument.getAlgorithm(), nextAmount, fiveType, nextChoice(), step);
     }
 
     private ChoiceValue nextChoice() {

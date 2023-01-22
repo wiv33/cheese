@@ -1,21 +1,55 @@
-
 management:
   endpoint:
     health:
       enabled: true
     metrics:
       enabled: true
+
 logging:
   level:
     sql: info
-    web: trace
+#    org.springframework: debug
+    org.springframework.data.mongodb.repository: debug
+    level:
+      com:
+        mongodb:
+          reactivestreams: debug
+      org:
+        springframework:
+          data:
+            mongodb:  debug
+
 spring:
   data:
     mongodb:
-      uri: http://localhost:27017
+      authentication-database: admin
+      uri: mongodb://localhost:27017
+      host: psawesome.xyz
+      port: 57017
+      database: cheese_five
   kafka:
     consumer:
-      client-id: cheese-web
+      client-id: cheese-webserver-dev
       bootstrap-servers: psawesome.xyz:50900
       auto-offset-reset: latest
       group-id: cheese-web-db-sync-group
+  jpa:
+    show-sql: true
+  main:
+    allow-bean-definition-overriding: true
+
+    properties:
+      hibernate:
+        ogm:
+          datastore:
+            create_database: true
+reactor:
+  netty:
+    http:
+      server:
+        accessLogEnabled: true
+
+cheese-mongo:
+  driver-name: mongo-java-driver|reactive-streams|spring-data
+  driver-platform: Java/Azul Systems, Inc./17.0.5+8-LTS
+  driver-version: 4.8.1

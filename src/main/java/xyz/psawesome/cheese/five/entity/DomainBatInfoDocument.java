@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@Document
+@Document("domain_bat_info")
 public class DomainBatInfoDocument extends CheeseBaseDocument implements Persistable<String> {
 
     @Id
