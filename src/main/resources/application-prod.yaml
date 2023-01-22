@@ -5,20 +5,8 @@ spring:
       group-id: cheese-webserver-group
       client-id: cheese-webserver
   data:
-    mongodb:
-      username: admin
-      password: powerful090
-      authentication-database: admin
-      host: localhost
-      port: 27017
-#      uri: mongodb://admin:powerful090@psawesome.xyz:57017/cheese-five
+    elasticsearch:
       repositories:
-        type: reactive
-      uuid-representation: standard
-      database: cheese_five
-
-
-cheese-mongo:
-  driver-name: nodejs|mongosh
-  driver-platform: Node.js v16.19.0, LE (unified)
-  driver-version: 4.13.0
+        enabled: true
+  elasticsearch:
+    uris: http://psawesome.xyz:59292

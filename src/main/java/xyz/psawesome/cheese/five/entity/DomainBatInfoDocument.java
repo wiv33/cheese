@@ -4,15 +4,15 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Persistable;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
 import xyz.psawesome.cheese.entity.CheeseBaseDocument;
 
 import java.math.BigDecimal;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@Document("domain_bat_info")
+@Document(indexName = "domain_bat_info")
 public class DomainBatInfoDocument extends CheeseBaseDocument implements Persistable<String> {
 
     @Id

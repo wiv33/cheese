@@ -21,12 +21,13 @@ logging:
 
 spring:
   data:
-    mongodb:
-      authentication-database: admin
-      uri: mongodb://localhost:27017
-      host: psawesome.xyz
-      port: 57017
-      database: cheese_five
+    elasticsearch:
+      repositories:
+        enabled: true
+  elasticsearch:
+    uris: psawesome.xyz:59292
+
+
   kafka:
     consumer:
       client-id: cheese-webserver-dev
@@ -43,13 +44,16 @@ spring:
         ogm:
           datastore:
             create_database: true
+
+    allow-circular-references: true
+
 reactor:
   netty:
     http:
       server:
         accessLogEnabled: true
+server:
+  http2:
+    enabled: true
 
-cheese-mongo:
-  driver-name: mongo-java-driver|reactive-streams|spring-data
-  driver-platform: Java/Azul Systems, Inc./17.0.5+8-LTS
-  driver-version: 4.8.1
+

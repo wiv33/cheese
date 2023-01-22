@@ -6,9 +6,9 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Persistable;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
-import org.springframework.data.mongodb.core.mapping.FieldType;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 import xyz.psawesome.cheese.entity.CheeseBaseDocument;
 
 import java.math.BigDecimal;
@@ -22,7 +22,7 @@ import static xyz.psawesome.cheese.five.entity.DomainBatInfoDocument.DEFAULT_RAT
 @ToString
 @NoArgsConstructor
 @Getter
-@Document(collection = "five_steps")
+@Document(indexName = "five_steps")
 public class FiveStepDocument extends CheeseBaseDocument implements Persistable<String> {
     @Id
     private String fiveStepId;
@@ -34,9 +34,9 @@ public class FiveStepDocument extends CheeseBaseDocument implements Persistable<
     private String algorithm;
     @Field("amount")
     private BigDecimal amount;
-    @Field(value = "five_type", targetType = FieldType.STRING)
+    @Field(value = "five_type", type = FieldType.Text)
     private FiveType fiveType;
-    @Field(value = "five_choice", targetType = FieldType.STRING)
+    @Field(value = "five_choice", type = FieldType.Text)
     private ChoiceValue choice;
     private int step;
 

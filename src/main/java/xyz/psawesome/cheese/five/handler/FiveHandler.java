@@ -4,8 +4,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -15,8 +13,8 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import xyz.psawesome.cheese.five.dto.FiveStepDto;
 import xyz.psawesome.cheese.five.entity.FiveResultDocument;
+import xyz.psawesome.cheese.five.repository.FiveResultRepository;
 
-import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 
 
@@ -24,15 +22,14 @@ import static org.springframework.web.reactive.function.server.ServerResponse.ok
 @Service
 public class FiveHandler {
 
-    private final ReactiveMongoTemplate mongoTemplate;
-
+    private final FiveResultRepository resultRepository;
     private final FiveService service;
     @Getter
     private final Sinks.Many<FiveResultDocument> syncProcessor;
 
 
-    public FiveHandler(ReactiveMongoTemplate mongoTemplate, FiveService service) {
-        this.mongoTemplate = mongoTemplate;
+    public FiveHandler(FiveService service, FiveResultRepository resultRepository) {
+        this.resultRepository = resultRepository;
         this.service = service;
         this.syncProcessor = Sinks.many().multicast().onBackpressureBuffer();
     }
@@ -90,9 +87,8 @@ public class FiveHandler {
         return args -> {
             syncProcessor.asFlux()
                     .log("sync process run ->>>>>>>>>>>>>>>>>>>")
-                    .flatMap(s -> mongoTemplate.findOne(Query.query(where("algorithm").is(s.getAlgorithm())
-                                    .and("fiveType").is(s.getFiveType())), FiveResultDocument.class)
-                            .switchIfEmpty(mongoTemplate.save(s)))
+                    .flatMap(s -> resultRepository.findByAlgorithmAndFiveType(s.getAlgorithm(), s.getFiveType())
+                            .switchIfEmpty(resultRepository.save(s)))
                     .subscribe();
         };
     }

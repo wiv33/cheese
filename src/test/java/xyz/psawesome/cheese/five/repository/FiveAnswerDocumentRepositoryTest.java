@@ -1,16 +1,11 @@
 package xyz.psawesome.cheese.five.repository;
 
 import com.mongodb.reactivestreams.client.MongoClient;
-import com.mongodb.reactivestreams.client.MongoDatabase;
-import org.jeasy.random.EasyRandom;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.SimpleReactiveMongoDatabaseFactory;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 import xyz.psawesome.cheese.five.entity.FiveResultDocument;
 
 import static xyz.psawesome.cheese.config.MongoDBConfig.DB_NAME;
@@ -23,6 +18,7 @@ class FiveAnswerDocumentRepositoryTest {
 
     @Autowired
     MongoClient mongoClient;
+
     @Test
     void saveTest() {
 //        EasyRandom easyRandom = new EasyRandom();

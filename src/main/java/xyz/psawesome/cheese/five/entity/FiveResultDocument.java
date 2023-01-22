@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.ToString;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Persistable;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.elasticsearch.annotations.Document;
 import xyz.psawesome.cheese.entity.CheeseBaseDocument;
 
 import java.time.Instant;
@@ -13,7 +13,7 @@ import java.time.Instant;
 
 @Getter
 @ToString
-@Document(collection = "five_results")
+@Document(indexName = "five_results")
 public class FiveResultDocument extends CheeseBaseDocument implements Persistable<String> {
     @Id
     private String fiveResultId;
