@@ -1,56 +1,29 @@
-podTemplate(label: 'docker-build', serverUrl: 'https://192.168.0.10:6443',
-  containers: [
-    containerTemplate(
-      name: 'git',
-      image: 'alpine/git',
-      command: 'cat',
-      ttyEnabled: true
-    ),
-    containerTemplate(
-      name: 'docker',
-      image: 'docker',
-      command: 'cat',
-      ttyEnabled: true
-    ),
-  ],
-  volumes: [
-    hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock'),
-  ]
-) {
-    node('docker-build') {
-        def dockerHubCred = docker_hub_cred
-        def appImage
+import java.text.SimpleDateFormat
 
-        stage('Checkout'){
-            container('git'){
-                checkout scm
-            }
-        }
+node {
 
-        stage('Gradle Build') {
-          steps {
-            sh 'gradle clean build -x test build.gradle'
-          }
-        }
+	parameters {
+		string(name: 'BRANCH', defaultValue: 'develop', description: '')
+	}
 
-        stage('Build'){
-            container('docker'){
-                script {
-                    appImage = docker.build("psawesome/xyz-cheese-web")
-                }
-            }
-        }
+	stage('Src Checkout') {
+		git branch: '${BRANCH}',
+			credentialsId: 'xyz-github',
+			url: 'https://github.com/wiv33/cheese.git'
+	}
 
-        stage('Push'){
-            container('docker'){
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', dockerHubCred){
+  	stage('Build') {
+  		sh './gradlew bootJar'
+  	}
+
+  	stage('Docker build') {
+	  	image = docker.build('psawesome/xyz-cheese-web:${BUILD_NUMBER}')
+  	}
+
+  	stage('Docker push') {
+		docker.withRegistry('https://registry.hub.docker.com', dockerHubCred){
                         appImage.push("${env.BUILD_NUMBER}")
                         appImage.push("latest")
                     }
-                }
-            }
-        }
-    }
-
+  	}
 }
