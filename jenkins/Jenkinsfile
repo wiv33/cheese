@@ -8,7 +8,7 @@ node {
 
 	stage('Src Checkout') {
 		git branch: '${BRANCH}',
-			credentialsId: '3015f712-2726-4053-9194-23fd4fcef4d2',
+			credentialsId: '3d4fa367-acc5-4487-87d4-30d22a93a527',
 			url: 'https://github.com/wiv33/cheese.git'
 	}
 
