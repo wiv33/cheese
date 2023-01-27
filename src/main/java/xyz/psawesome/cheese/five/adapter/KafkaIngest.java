@@ -17,7 +17,7 @@ import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import xyz.psawesome.cheese.dto.PBMessage;
-import xyz.psawesome.cheese.five.handler.FiveHandler;
+import xyz.psawesome.cheese.five.handler.FiveService;
 
 import java.util.Properties;
 
@@ -40,7 +40,7 @@ public class KafkaIngest {
 
     public static final String INGEST_TOPIC = "powerball_5_test";
 
-    private final FiveHandler fiveHandler;
+    private final FiveService fiveService;
 
     //    @Bean
     IntegrationFlow fiveIngest() {
@@ -88,8 +88,10 @@ public class KafkaIngest {
                 .handle(message -> {
                     var payload = (PBMessage) message.getPayload();
                     payload.toFiveResultDocument()
-                            .map(s -> fiveHandler.getSyncProcessor().tryEmitNext(s))
-                            .subscribe();
+                            .subscribe(s -> {
+                                fiveService.getPowerBusProcessor().tryEmitNext(s.getT1());
+                                fiveService.getBasicBusProcessor().tryEmitNext(s.getT2());
+                            });
                 })
                 .get();
     }

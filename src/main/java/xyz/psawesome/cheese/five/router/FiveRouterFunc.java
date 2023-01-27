@@ -19,13 +19,12 @@ public class FiveRouterFunc {
 
     @Bean
     RouterFunction<?> cheeseRouter() {
-        return route(GET("/cheese/v1/connection/{userId}/subnet/{subnetId}/type/{fiveType}")
-                        .and(accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM,
-                                MediaType.APPLICATION_OCTET_STREAM)),
-                fiveHandler::connection2)
-                .andRoute(GET("/cheese/v1/five-next/step/{stepId}")
-                                .and(accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM,
-                                        MediaType.APPLICATION_OCTET_STREAM)),
-                        fiveHandler::nextByTemplate);
+        return route(
+                GET("/five/v1/connection/{userId}/subnet/{subnetId}/type/{fiveType}")
+                                .and(accept(MediaType.APPLICATION_JSON)),
+                        fiveHandler::nextStep)
+                .andRoute(
+                        GET("/five/v1/result")
+                                .and(accept(MediaType.APPLICATION_NDJSON)), fiveHandler::retrieveCurrentResultDoc);
     }
 }

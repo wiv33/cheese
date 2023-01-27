@@ -7,17 +7,10 @@ management:
 
 logging:
   level:
-    sql: info
-#    org.springframework: debug
-    org.springframework.data.mongodb.repository: debug
-    level:
-      com:
-        mongodb:
-          reactivestreams: debug
-      org:
-        springframework:
-          data:
-            mongodb:  debug
+    org.springframework: info
+    org:
+      elasticsearch:
+        client: trace
 
 spring:
   data:
@@ -48,6 +41,10 @@ reactor:
     http:
       server:
         accessLogEnabled: true
+
+elasticsearch:
+  host: psawesome.xyz
+  port: 59292
 
 cheese-mongo:
   driver-name: mongo-java-driver|reactive-streams|spring-data

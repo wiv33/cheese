@@ -17,6 +17,9 @@ spring:
       uuid-representation: standard
       database: cheese_five
 
+elasticsearch:
+  host: psawesome.xyz
+  port: 59292
 
 cheese-mongo:
   driver-name: nodejs|mongosh

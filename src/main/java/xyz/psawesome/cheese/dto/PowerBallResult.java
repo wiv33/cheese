@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class PowerBallResult {
 
-    private LocalDate eventDate;
+    private String eventDate;
     private String algorithm;
     String powerBallResult;
     String powerBallSection;

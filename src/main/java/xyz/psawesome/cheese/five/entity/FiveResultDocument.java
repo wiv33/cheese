@@ -1,28 +1,29 @@
 package xyz.psawesome.cheese.five.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.domain.Persistable;
-import org.springframework.data.mongodb.core.mapping.Document;
 import xyz.psawesome.cheese.entity.CheeseBaseDocument;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.util.UUID;
 
 
 @Getter
 @ToString
-@Document(collection = "five_results")
-public class FiveResultDocument extends CheeseBaseDocument implements Persistable<String> {
-    @Id
-    private String fiveResultId;
-
-    private String algorithm;
-
-    private FiveType fiveType;
-
-    private Answer answer;
+public class FiveResultDocument extends CheeseBaseDocument {
+    @Setter
+    private String fiveResultId = UUID.randomUUID().toString();
+    private final String algorithm;
+    private final FiveType fiveType;
+    private final Answer answer;
+    protected Instant createdAt = Instant.now(Clock.systemUTC());
+    protected Instant updatedAt = Instant.now(Clock.systemUTC());
+    @Setter @JsonIgnore
+    private boolean isNew = false;
 
     public FiveResultDocument(String algorithm, FiveType fiveType, Answer answer) {
         this.algorithm = algorithm;
@@ -34,17 +35,12 @@ public class FiveResultDocument extends CheeseBaseDocument implements Persistabl
         return fiveType == type && choiceValue.match(answer.getOddEven());
     }
 
-    @Override
-    public String getId() {
-        return fiveResultId;
-    }
-
-    @Override
-    public boolean isNew() {
-        return createdAt == null;
-    }
-
     public Instant createdDate() {
         return createdAt;
+    }
+
+
+    public String getOddEvenAnswer() {
+        return answer.getOddEven();
     }
 }

@@ -1,6 +1,5 @@
 package xyz.psawesome.cheese.five.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,7 +17,6 @@ public class Answer {
     private String size;
     private String oddEven;
     private String underOver;
-
 
     public static Answer fromPower(String result, String section, String oddEven, String underOver) {
         return new Answer(result, "", section, "", oddEven, underOver);

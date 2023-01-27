@@ -16,7 +16,9 @@ public class FiveStepDto {
                                FiveType fiveType,
                                ChoiceValue choice, int step) {
         public NextResponse(FiveStepDocument prevStep) {
-            this(prevStep.getFiveStepId(), prevStep.getUserId(), prevStep.getSubnetId(), prevStep.getAlgorithm(), prevStep.getAmount(), prevStep.getFiveType(), prevStep.getChoice(), prevStep.getStep());
+            this(prevStep.getFiveStepId(), prevStep.getUserId(), prevStep.getSubnetId(),
+                    prevStep.getAlgorithm(), prevStep.getAmount(),
+                    prevStep.getFiveType(), prevStep.getChoice(), prevStep.getStep());
         }
 
     }

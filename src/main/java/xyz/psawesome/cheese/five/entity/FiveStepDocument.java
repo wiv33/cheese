@@ -1,63 +1,54 @@
 package xyz.psawesome.cheese.five.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.domain.Persistable;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
-import org.springframework.data.mongodb.core.mapping.FieldType;
 import xyz.psawesome.cheese.entity.CheeseBaseDocument;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
-import static xyz.psawesome.cheese.five.entity.DomainBatInfoDocument.DEFAULT_MIN_AMOUNT;
-import static xyz.psawesome.cheese.five.entity.DomainBatInfoDocument.DEFAULT_RATIO;
+import static org.apache.logging.log4j.util.Strings.isBlank;
+import static xyz.psawesome.cheese.five.entity.DomainBatInfoDocument.*;
 
 @ToString
 @NoArgsConstructor
 @Getter
-@Document(collection = "five_steps")
-public class FiveStepDocument extends CheeseBaseDocument implements Persistable<String> {
-    @Id
-    private String fiveStepId;
-    @Field("user_id")
+public class FiveStepDocument extends CheeseBaseDocument {
+    private String fiveStepId = UUID.randomUUID().toString();
     private String userId;
-    @Field("subnet_id")
     private String subnetId;
-    @Field("algorithm")
+    @Setter
     private String algorithm;
-    @Field("amount")
     private BigDecimal amount;
-    @Field(value = "five_type", targetType = FieldType.STRING)
     private FiveType fiveType;
-    @Field(value = "five_choice", targetType = FieldType.STRING)
     private ChoiceValue choice;
     private int step;
-
-    public FiveStepDocument(String userId, String subnetId, String algorithm, FiveType fiveType) {
-        this.userId = userId;
-        this.subnetId = subnetId;
-        this.algorithm = algorithm;
-        this.fiveType = fiveType;
-    }
-
-    public FiveStepDocument(String userId, String subnetId, FiveType fiveType) {
-        this.userId = userId;
-        this.subnetId = subnetId;
-        this.fiveType = fiveType;
-    }
+    protected Instant createdAt = Instant.now(Clock.systemUTC());
+    protected Instant updatedAt = Instant.now(Clock.systemUTC());
+    @JsonIgnore
+    @Setter
+    private boolean isNew = true;
+    private List<ChoiceValue> choiceList;
+    private BigDecimal previousAmount;
+    private ChoiceValue previousChoice;
+    private String previousAnswer;
+    private String previousAlgorithm;
 
     /**
-     * All Argument constructor
+     * 초기 생성
      */
     public FiveStepDocument(String userId, String subnetId, String algorithm, BigDecimal amount, FiveType fiveType,
-                            ChoiceValue choice, int step) {
+                            ChoiceValue choice, int step, List<ChoiceValue> choiceList) {
         this.userId = userId;
         this.subnetId = subnetId;
         this.algorithm = algorithm;
@@ -65,35 +56,33 @@ public class FiveStepDocument extends CheeseBaseDocument implements Persistable<
         this.fiveType = fiveType;
         this.choice = choice;
         this.step = step;
+        this.choiceList = choiceList;
     }
 
-    public static FiveStepDocument forLastFind(String userId, String subnetId, String fiveType) {
-        return new FiveStepDocument(userId, subnetId, FiveType.getType(fiveType));
+    /**
+     * next step
+     */
+    public FiveStepDocument(String userId, String subnetId, String algorithm, BigDecimal amount, FiveType fiveType,
+                            ChoiceValue choice, int step,
+                            BigDecimal previousAmount, ChoiceValue previousChoice, String previousAnswer, String previousAlgorithm,
+                            List<ChoiceValue> choiceList) {
+        this.userId = userId;
+        this.subnetId = subnetId;
+        this.algorithm = algorithm;
+        this.amount = amount;
+        this.fiveType = fiveType;
+        this.choice = choice;
+        this.step = step;
+        this.previousAmount = previousAmount;
+        this.previousChoice = previousChoice;
+        this.previousAnswer = previousAnswer;
+        this.previousAlgorithm = previousAlgorithm;
+        this.choiceList = choiceList;
     }
 
-    public static FiveStepDocument forLastFind(String userId, String subnetId, String algorithm, String fiveType) {
-        return new FiveStepDocument(userId, subnetId, algorithm, FiveType.getType(fiveType));
-    }
-
-    public static FiveStepDocument forLastFind(String userId, String subnetId, String algorithm, FiveType fiveType) {
-        return new FiveStepDocument(userId, subnetId, algorithm, fiveType);
-    }
-
-    public static FiveStepDocument forInitSave(String userId, String subnetId, String algorithm, String fiveType) {
-        return new FiveStepDocument(userId, subnetId, algorithm, DEFAULT_MIN_AMOUNT, FiveType.getType(fiveType), ChoiceValue.ODD, 0);
-    }
-
-    public FiveStepDocument next(FiveResultDocument resultDocument) {
-        if (resultDocument.getAlgorithm().equalsIgnoreCase(algorithm))
-            return this;
-
-        var nextAmount = resultDocument.isAnswer(fiveType, choice) ? DEFAULT_MIN_AMOUNT : nextAmount(DEFAULT_RATIO);
-        this.step = step > 13 ? 0 : step + 1;
-        return new FiveStepDocument(userId, subnetId, resultDocument.getAlgorithm(), nextAmount, fiveType, nextChoice(), step);
-    }
-
-    private ChoiceValue nextChoice() {
-        List<ChoiceValue> staticChoiceList = new ArrayList<>(List.of(
+    private static List<ChoiceValue> initChoiceList() {
+        // tood 변경 필요
+        List<ChoiceValue> staticRatioValues = new ArrayList<>(List.of(
                 ChoiceValue.ODD, ChoiceValue.EVEN,
                 ChoiceValue.ODD, ChoiceValue.EVEN,
                 ChoiceValue.ODD, ChoiceValue.EVEN,
@@ -101,23 +90,52 @@ public class FiveStepDocument extends CheeseBaseDocument implements Persistable<
                 ChoiceValue.ODD, ChoiceValue.EVEN,
                 ChoiceValue.ODD, ChoiceValue.EVEN,
                 ChoiceValue.ODD, ChoiceValue.EVEN,
-                ChoiceValue.ODD));
-        return staticChoiceList.get(step);
+                ThreadLocalRandom.current().nextBoolean() ? ChoiceValue.ODD : ChoiceValue.EVEN));
+        ;
+
+        var result = new ArrayList<ChoiceValue>();
+        while (!staticRatioValues.isEmpty()) {
+            var nextInt = ThreadLocalRandom.current().nextInt(0, staticRatioValues.size());
+            var choiceValue = staticRatioValues.get(nextInt);
+            result.add(choiceValue);
+            staticRatioValues.remove(choiceValue);
+        }
+        assert result.size() == 15;
+        return result;
     }
 
-    public BigDecimal nextAmount(BigDecimal ratio) {
+    public static FiveStepDocument forInitSave(String userId, String subnetId, String algorithm, FiveType fiveType) {
+        var initChoiceList = initChoiceList();
+        int initStep = 0;
+        return new FiveStepDocument(userId, subnetId,
+                algorithm, DEFAULT_MIN_AMOUNT,
+                fiveType,
+                initChoiceList.get(initStep), initStep,
+                initChoiceList);
+    }
+
+    public static FiveStepDocument next(FiveResultDocument lastResult, FiveResultDocument batMatchResult, FiveStepDocument lastStep) {
+        var nextAmount = batMatchResult.isAnswer(lastStep.getFiveType(), lastStep.getChoice()) ? DEFAULT_MIN_AMOUNT : nextAmount(lastStep.getAmount(), DEFAULT_RATIO);
+        var lastStepCnt = lastStep.getStep() > 13 ? 0 : lastStep.getStep() + 1;
+        return new FiveStepDocument(lastStep.getUserId(), lastStep.getSubnetId(),
+                lastResult.getAlgorithm(),
+                nextAmount, lastStep.getFiveType(),
+                lastStep.getChoiceList().get(lastStepCnt), lastStepCnt,
+                lastStep.getAmount(),
+                lastStep.getChoice(), batMatchResult.getOddEvenAnswer(), batMatchResult.getAlgorithm(),
+                lastStep.getChoiceList());
+    }
+
+    public boolean isAlreadyBat(FiveResultDocument lastResult) {
+        this.algorithm = isBlank(algorithm) ? lastResult.getAlgorithm() : algorithm;
+        return lastResult.getAlgorithm().equalsIgnoreCase(algorithm);
+    }
+
+    public static BigDecimal nextAmount(BigDecimal amount, BigDecimal ratio) {
         return amount.multiply(ratio)
                 .divide(BigDecimal.TEN, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.TEN);
+                .multiply(BigDecimal.TEN)
+                .min(DEFAULT_MAX_AMOUNT);
     }
 
-    @Override
-    public String getId() {
-        return fiveStepId;
-    }
-
-    @Override
-    public boolean isNew() {
-        return createdAt == null;
-    }
 }
