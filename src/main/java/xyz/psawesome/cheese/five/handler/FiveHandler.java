@@ -19,30 +19,29 @@ import static org.springframework.web.reactive.function.server.ServerResponse.ok
 public class FiveHandler {
 
 
-    private final FiveService service;
+  private final FiveService service;
 
-    public FiveHandler(FiveService service) {
-        this.service = service;
-    }
+  public FiveHandler(FiveService service) {
+    this.service = service;
+  }
 
-    public Mono<ServerResponse> nextStep(ServerRequest request) {
-        var userId = request.pathVariable("userId");
-        var subnetId = request.pathVariable("subnetId");
-        var fiveType = request.pathVariable("fiveType");
+  public Mono<ServerResponse> nextStep(ServerRequest request) {
+    var userId = request.pathVariable("userId");
+    var subnetId = request.pathVariable("subnetId");
+    var fiveType = request.pathVariable("fiveType");
 
-        log.info("next step : {}, {}, {}", userId, subnetId, fiveType);
-        return ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .allow(HttpMethod.GET)
-                .body(service.nextResponse2(userId, subnetId, FiveType.getType(fiveType)),
-                        FiveStepDto.NextResponse.class);
-    }
+    log.info("next step : {}, {}, {}", userId, subnetId, fiveType);
+    return ok().contentType(MediaType.APPLICATION_JSON)
+        .allow(HttpMethod.GET)
+        .body(service.nextResponse2(userId, subnetId, FiveType.getType(fiveType)),
+            FiveStepDto.NextResponse.class);
+  }
 
-    public Mono<ServerResponse> retrieveCurrentResultDoc(ServerRequest request) {
-        return ok()
-                .allow(HttpMethod.GET)
-                .contentType(MediaType.APPLICATION_NDJSON)
-                .body(service.currentResultDocument(), FiveResultDocument.class);
-    }
+  public Mono<ServerResponse> retrieveCurrentResultDoc(ServerRequest request) {
+    return ok()
+        .allow(HttpMethod.GET)
+        .contentType(MediaType.APPLICATION_NDJSON)
+        .body(service.currentResultDocument(), FiveResultDocument.class);
+  }
 
 }

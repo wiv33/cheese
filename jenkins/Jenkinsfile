@@ -9,7 +9,7 @@ node {
 	stage('Src Checkout') {
 		git branch: '${BRANCH}',
 			credentialsId: '3641a3eb-48a3-4c6e-8dd8-6d77ff718525',
-			url: 'https://github.com/wiv33/cheese.git'
+			url: 'git@github.com:wiv33/cheese'
 	}
 
   	stage('Build') {

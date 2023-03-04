@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -17,6 +18,7 @@ import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import xyz.psawesome.cheese.dto.PBMessage;
+import xyz.psawesome.cheese.dto.PowerBallResult;
 import xyz.psawesome.cheese.five.handler.FiveService;
 
 import java.util.Properties;
@@ -27,73 +29,84 @@ import java.util.Properties;
 public class KafkaIngest {
 
 
-    @Value("${spring.kafka.consumer.bootstrap-servers}")
-    private String bootstrapServers;
+  @Value("${spring.kafka.consumer.bootstrap-servers}")
+  private String bootstrapServers;
 
-    @Value("${spring.kafka.consumer.group-id}")
-    private String groupId;
+  @Value("${spring.kafka.consumer.group-id}")
+  private String groupId;
 
-    @Value("${spring.kafka.consumer.client-id}")
-    private String clientId;
+  @Value("${spring.kafka.consumer.client-id}")
+  private String clientId;
 
-    private final ConsumerFactory<String, String> consumerFactory;
+  private final ConsumerFactory<String, String> consumerFactory;
 
-    public static final String INGEST_TOPIC = "powerball_5_test";
+  public static final String INGEST_TOPIC = "powerball_5_test";
+  public static final String INGEST_PB_RESULT_TOPIC = "powerball_5";
 
-    private final FiveService fiveService;
+  private final FiveService fiveService;
 
-    //    @Bean
-    IntegrationFlow fiveIngest() {
-        return IntegrationFlow.from(Kafka.messageDrivenChannelAdapter(consumerFactory,
-                                KafkaMessageDrivenChannelAdapter.ListenerMode.record, INGEST_TOPIC)
-                        .configureListenerContainer(c ->
-                                c.ackMode(ContainerProperties.AckMode.MANUAL)
-                                        .id("topic1ListenerContainer"))
-//                .recoveryCallback(new ErrorMessageSendingRecoverer(errorChannel(),
-//                        new RawRecordHeaderErrorMessageStrategy()))
-                        .retryTemplate(new RetryTemplate())
-                        .filterInRetry(true))
-//                 .filter(Message.class, m ->
-//                            m.getHeaders().get(KafkaIntegrationHeaders.FLUSH, Integer.class) < 101,
-//                    f -> f.throwExceptionOnRejection(true))
-                .<String, String>transform(String::toUpperCase)
-                .channel(c -> c.queue("listeningFromKafkaResults1"))
-                .get();
-    }
+  //    @Bean
+  IntegrationFlow fiveIngest() {
+    return IntegrationFlow.from(Kafka.messageDrivenChannelAdapter(consumerFactory, KafkaMessageDrivenChannelAdapter.ListenerMode.record, INGEST_TOPIC).configureListenerContainer(c -> c.ackMode(ContainerProperties.AckMode.MANUAL).id("topic1ListenerContainer"))
+//            .recoveryCallback(new ErrorMessageSendingRecoverer(errorChannel(),
+//                new RawRecordHeaderErrorMessageStrategy()))
+            .retryTemplate(new RetryTemplate()).filterInRetry(true))
+//        .filter(Message.class, m ->
+//                m.getHeaders().get(KafkaIntegrationHeaders.FLUSH, Integer.class) < 101,
+//            f -> f.throwExceptionOnRejection(true))
+        .<String, String>transform(String::toUpperCase).channel(c -> c.queue("listeningFromKafkaResults1")).get();
+  }
 
 
-    private final ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper;
 
-    @Bean
-    public IntegrationFlow flow(ConsumerFactory<String, String> cf) {
-        ConsumerProperties consumerProperties = new ConsumerProperties(INGEST_TOPIC);
-        consumerProperties.setGroupId(groupId);
-        consumerProperties.setClientId(clientId);
-        var kafkaConsumerProperties = new Properties();
-        kafkaConsumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+  @Bean
+  public IntegrationFlow flow(ConsumerFactory<String, String> cf) {
+    ConsumerProperties consumerProperties = getConsumerProperties(INGEST_TOPIC);
+    return IntegrationFlow.from(Kafka.inboundChannelAdapter(cf, consumerProperties), e -> e.poller(Pollers.fixedRate(5000))).log("ingest polling").transform(String.class, s -> {
+      try {
+        log.info("ingest message : {}", s);
+        return objectMapper.readValue(s, PBMessage.class);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    }).handle(message -> {
+      var payload = (PBMessage) message.getPayload();
+      payload.toFiveResultDocument().subscribe(s -> {
+        fiveService.getPowerBusProcessor().tryEmitNext(s.getT1());
+        fiveService.getBasicBusProcessor().tryEmitNext(s.getT2());
+      });
+    }).get();
+  }
+
+  @Bean
+  public IntegrationFlow flowIngestPBResult(ConsumerFactory<String, String> cf) {
+    ConsumerProperties consumerProperties = getConsumerProperties(INGEST_PB_RESULT_TOPIC);
+    return IntegrationFlow.from(Kafka.inboundChannelAdapter(cf, consumerProperties), e -> e.poller(Pollers.fixedRate(5000))).log("ingest PB Result polling").transform(String.class, s -> {
+      try {
+        log.info("ingest powerball result message : {}", s);
+        return objectMapper.readValue(s, PowerBallResult.class);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    }).handle(message -> {
+      var payload = (PowerBallResult) message.getPayload();
+      log.info("hello world : {}", payload);
+      fiveService.getResultBusProcessor().tryEmitNext(payload);
+    }).get();
+  }
+
+  @NotNull
+  private ConsumerProperties getConsumerProperties(String consumeTopic) {
+    ConsumerProperties consumerProperties = new ConsumerProperties(consumeTopic);
+    consumerProperties.setGroupId(groupId);
+    consumerProperties.setClientId(clientId);
+    var kafkaConsumerProperties = new Properties();
+    kafkaConsumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 //        kafkaConsumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "300");
 
-        consumerProperties.setKafkaConsumerProperties(kafkaConsumerProperties);
-        return IntegrationFlow.from(Kafka.inboundChannelAdapter(cf, consumerProperties),
-                        e -> e.poller(Pollers.fixedRate(5000)))
-                .log("ingest polling")
-                .transform(String.class, s -> {
-                    try {
-                        log.info("ingest message : {}", s);
-                        return objectMapper.readValue(s, PBMessage.class);
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .handle(message -> {
-                    var payload = (PBMessage) message.getPayload();
-                    payload.toFiveResultDocument()
-                            .subscribe(s -> {
-                                fiveService.getPowerBusProcessor().tryEmitNext(s.getT1());
-                                fiveService.getBasicBusProcessor().tryEmitNext(s.getT2());
-                            });
-                })
-                .get();
-    }
+    consumerProperties.setKafkaConsumerProperties(kafkaConsumerProperties);
+    return consumerProperties;
+  }
 
 }
